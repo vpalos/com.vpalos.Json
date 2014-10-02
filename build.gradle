@@ -1,0 +1,35 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.github.maiflai:gradle-scalatest:0.4'
+    }
+}
+
+apply plugin: 'scala'
+apply plugin: 'scalatest'
+
+sourceCompatibility = 1.6
+version = '1.0'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    compile 'org.scala-lang:scala-library:2.11.2'
+    compile 'org.scala-lang.modules:scala-parser-combinators_2.11:1.0.2'
+    compile 'org.apache.commons:commons-lang3:3.3.2'
+
+    testCompile 'org.scalatest:scalatest_2.11:2.2.1'
+}
+
+compileScala {
+    scalaCompileOptions.additionalParameters = ["-feature"]
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.1'
+}
