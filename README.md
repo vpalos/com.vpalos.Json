@@ -24,6 +24,7 @@ Normally you would just copy the `com/vpalos/Json.scala` file inside your source
 git clone https://github.com/vpalos/com.vpalos.Json.git
 cd com.vpalos.Json
 ./gradlew test
+# ...or...
 ./gradlew build
 ```
 
