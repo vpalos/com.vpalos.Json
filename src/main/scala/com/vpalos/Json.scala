@@ -11,20 +11,20 @@ import scala.language.{dynamics, implicitConversions}
 import scala.util.parsing.combinator.{PackratParsers, RegexParsers}
 
 /**
- * A dynamic representation of a Json document enabling very intuitive parsing, manipulation
- * and navigation within Json data from code. This implementation is not optimized for speed
- * or low memory usage, it is meant to be useful in scripting scenarios where navigating the
- * JSON structure can be rather verbose.
- */
+  * A dynamic representation of a Json document enabling very intuitive parsing, manipulation
+  * and navigation within Json data from code. This implementation is not optimized for speed
+  * or low memory usage, it is meant to be useful in scripting scenarios where navigating the
+  * JSON structure can be rather verbose.
+  */
 abstract class Json extends Dynamic with Serializable {
 
   /**
-   * Dynamic look-ups.
-   */
+    * Dynamic look-ups.
+    */
   def apply(name: String): Json
   def apply(index: Int): Json
   def selectDynamic(name: String) = apply(name)
-  def applyDynamic(name: String)  = apply(name)
+  def applyDynamic(name: String) = apply(name)
 
   /**
    * Dynamic update functions.
@@ -121,7 +121,7 @@ abstract class JValue[T](val data: T) extends Json {
 
   /**
    * Dynamic look-ups.
-   */
+    */
   def apply(name: String): Json = new JUndefinedInObject(parent = this, name = name)
   def apply(index: Int): Json   = new JUndefinedInArray(parent = this, index = index)
 
@@ -322,8 +322,8 @@ class JObject(value: mutable.Map[String, JValue[_]]) extends JValue(value) {
     }.map(_._2)
     val deeperLevels = data.valuesIterator.flatMap {
       case o: JObject => o.findAll(name)
-      case a: JArray  => a.findAll(name)
-      case _          => Iterator.empty
+      case a: JArray => a.findAll(name)
+      case _ => Iterator.empty
     }
     currentLevel ++ deeperLevels
   }
@@ -334,26 +334,34 @@ class JObject(value: mutable.Map[String, JValue[_]]) extends JValue(value) {
     }.map(_._2)
     val deeperLevels = data.valuesIterator.flatMap {
       case o: JObject => o.findAll(op)
-      case a: JArray  => a.findAll(op)
-      case _          => Iterator.empty
+      case a: JArray => a.findAll(op)
+      case _ => Iterator.empty
     }
     currentLevel ++ deeperLevels
   }
 
+  private def sortedEscapedItems = data.toArray.sortBy(_._1).map {
+    kv => (s""""${StringEscapeUtils.escapeJson(kv._1)}"""", kv._2)
+  }
+
   override def toString(prefix: String): String = {
     val indent = s"$prefix  "
-    data.toArray.sortBy(_._1).map {
+    sortedEscapedItems.map {
       case (key: String, value: JValue[_]) =>
-        s""""${StringEscapeUtils.escapeJson(key)}": ${value.toString(indent)}"""
+        s"""$key: ${value.toString(indent)}"""
     }.mkString(s"{\n$indent", s",\n$indent", s"\n$prefix}")
   }
 
-  override def toString = toString("")
+  override def toString: String = {
+    sortedEscapedItems.map { kv => kv._1 + ":" + kv._2.toString
+    }.mkString("{", ",", "}")
+  }
+
 }
 
 /**
- * Class representing Json array nodes.
- */
+  * Class representing Json array nodes.
+  */
 class JArray(values: Seq[JValue[_]] = Seq.empty[JValue[_]]) extends JValue(mutable.ArrayBuffer.concat(values)) {
   def asType = "array"
   override def isArray = true
@@ -398,8 +406,8 @@ class JArray(values: Seq[JValue[_]] = Seq.empty[JValue[_]]) extends JValue(mutab
   override def findAll(name: String): Iterator[Json] = {
     data.iterator.flatMap {
       case o: JObject => o.findAll(name)
-      case a: JArray  => a.findAll(name)
-      case _          => Iterator.empty
+      case a: JArray => a.findAll(name)
+      case _ => Iterator.empty
     }
   }
 
@@ -408,8 +416,8 @@ class JArray(values: Seq[JValue[_]] = Seq.empty[JValue[_]]) extends JValue(mutab
 
     val deeperLevels = data.iterator.flatMap {
       case o: JObject => o.findAll(op)
-      case a: JArray  => a.findAll(op)
-      case _          => Iterator.empty
+      case a: JArray => a.findAll(op)
+      case _ => Iterator.empty
     }
 
     currentLevel ++ deeperLevels
@@ -417,37 +425,37 @@ class JArray(values: Seq[JValue[_]] = Seq.empty[JValue[_]]) extends JValue(mutab
 
   override def toString(prefix: String): String = {
     val indent = s"$prefix  "
-    data.map(item => s"${item.toString(indent)}")
-        .mkString(s"[\n$indent", s",\n$indent", s"\n$prefix]")
+    data.map(_.toString(indent))
+            .mkString(s"[\n$indent", s",\n$indent", s"\n$prefix]")
   }
 
-  override def toString = toString("")
+  override def toString: String = data.map(_.toString).mkString("[", ",", "]")
 }
 
 /**
- * String wrapper class augmented with Json parsing.
- */
+  * String wrapper class augmented with Json parsing.
+  */
 class JsonString(val value: String) {
   def toJson: Json = Json.parse(value)
 }
 
 /**
- * Json parsing exception.
- */
+  * Json parsing exception.
+  */
 case class JsonParseException(message: String, line: Int, column: Int)
-  extends Exception(s"JSON parsing error [line $line, column $column]: $message.")
+        extends Exception(s"JSON parsing error [line $line, column $column]: $message.")
 
 /**
- * Json type classes and static constructs.
- */
+  * Json type classes and static constructs.
+  */
 object Json {
 
   /**
-   * Json object creation static functions.
-   */
-  def apply():                JValue[_] = new JObject()
+    * Json object creation static functions.
+    */
+  def apply(): JValue[_] = new JObject()
   def apply(json: JValue[_]): JValue[_] = json
-  def apply(value: Null):     JValue[_] = JNull.Instance
+  def apply(value: Null): JValue[_] = JNull.Instance
 
   /**
    * Internal Json parser; built following the official JSON definition (http://json.org).
@@ -468,7 +476,7 @@ object Json {
    * - an integer followed by a decimal point and fractional part (e.g. `3.14`);
    * - a decimal point followed by a fractional part (e.g. `.1`);
    * - any of the above followed by `e` or `E` and an optionally signed integer (e.g. `123.4e-10`).
-   */
+    */
   private class JsonParser extends RegexParsers with PackratParsers {
 
     lazy val literalString: PackratParser[String] =
@@ -509,8 +517,8 @@ object Json {
   private val parser = new JsonParser
 
   /**
-   * Parse Json document from a Reader source.
-   */
+    * Parse Json document from a Reader source.
+    */
   @throws
   def parse(input: Reader) = {
     parser.parseAll(parser.jObject, input) match {
@@ -522,48 +530,48 @@ object Json {
   }
 
   /**
-   * Parse Json document from a String source. Alternatively, use the `.toJson()` method on it.
-   */
+    * Parse Json document from a String source. Alternatively, use the `.toJson()` method on it.
+    */
   def parse(input: String): Json = parse(new StringReader(input))
 
   /**
-   * Parse Json document from an stream source.
-   */
+    * Parse Json document from an stream source.
+    */
   def parse(input: InputStream): Json = parse(new InputStreamReader(input))
 
   /**
-   * Parse Json document from a URL source.
-   */
+    * Parse Json document from a URL source.
+    */
   def parse(input: URL): Json = parse(input.openStream())
 
   /**
-   * Parse Json document from a File source.
-   */
+    * Parse Json document from a File source.
+    */
   def parse(input: File): Json = parse(new FileInputStream(input))
 
   /**
-   * Parse Json document from an array fo bytes source.
-   */
+    * Parse Json document from an array fo bytes source.
+    */
   def parse(input: Array[Byte]): Json = parse(new ByteArrayInputStream(input))
 
   /**
-   * Augment the String class with JsonString to mixin the provided helper method(s).
-   */
+    * Augment the String class with JsonString to mixin the provided helper method(s).
+    */
   @inline implicit def String_to_JsonString(s: String): JsonString = new JsonString(s)
   @inline implicit def JsonString_to_String(j: JsonString): String = j.value
 
   /**
-   * Implicit value extractors.
-   */
+    * Implicit value extractors.
+    */
   implicit def Json_to_Boolean(json: Json): Boolean = json.asBoolean
-  implicit def Json_to_Int(json: Json): Int         = json.asInt
-  implicit def Json_to_Long(json: Json): Long       = json.asLong
-  implicit def Json_to_Double(json: Json): Double   = json.asDouble
-  implicit def Json_to_String(json: Json): String   = json.asString
+  implicit def Json_to_Int(json: Json): Int = json.asInt
+  implicit def Json_to_Long(json: Json): Long = json.asLong
+  implicit def Json_to_Double(json: Json): Double = json.asDouble
+  implicit def Json_to_String(json: Json): String = json.asString
 
   /**
-   * Implicit converters for value/collection assignments.
-   */
+    * Implicit converters for value/collection assignments.
+    */
   implicit def Any_to_JValue(value: Any): JValue[_] = {
     value match {
       case v: Boolean => new JBoolean(v)
@@ -573,8 +581,8 @@ object Json {
       case v: BigInt => new JNumber(v.toLong)
       case v: BigDecimal => new JNumber(v.toDouble)
       case v: String => new JString(v)
-      case v: Map[String @unchecked, _] => new JObject(v.mapValues(Any_to_JValue))
-      case v: java.util.Map[String @unchecked, _] => Any_to_JValue(v.toMap[String, Any])
+      case v: Map[String@unchecked, _] => new JObject(v.mapValues(Any_to_JValue))
+      case v: java.util.Map[String@unchecked, _] => Any_to_JValue(v.toMap[String, Any])
       case v: TraversableOnce[_] => new JArray(v.toSeq.map(Any_to_JValue))
       case v: Array[_] => new JArray(v.toSeq.map(Any_to_JValue))
       case v: JValue[_] => v

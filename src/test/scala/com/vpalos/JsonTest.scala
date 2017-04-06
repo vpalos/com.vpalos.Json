@@ -325,32 +325,37 @@ class JsonTest extends FlatSpec with Matchers {
   /**
    * Rendering tests.
    */
-  val json = Json.parse("""{"a":123,"b":{"c":4.56, "d":[1,2,{"e":"f"},4]},"g":7}""")
-  assert(json.toString ==
-    """{
-      |  "a": 123,
-      |  "b": {
-      |    "c": 4.56,
-      |    "d": [
-      |      1,
-      |      2,
-      |      {
-      |        "e": "f"
-      |      },
-      |      4
-      |    ]
-      |  },
-      |  "g": 7
-      |}""".stripMargin)
-  assert(json.b.d.toString ==
-    """[
-      |  1,
-      |  2,
-      |  {
-      |    "e": "f"
-      |  },
-      |  4
-      |]""".stripMargin)
+  it should "properly serialize beautified and non-beautified JSONs" in {
+    val json = Json.parse("""{"a":123,"b":{"c":4.56, "d":[1,2,{"e":"f"},4]},"g":7}""")
+    assert(json.toString == """{"a":123,"b":{"c":4.56,"d":[1,2,{"e":"f"},4]},"g":7}""")
+    assert(json.toString("") ==
+      """{
+        |  "a": 123,
+        |  "b": {
+        |    "c": 4.56,
+        |    "d": [
+        |      1,
+        |      2,
+        |      {
+        |        "e": "f"
+        |      },
+        |      4
+        |    ]
+        |  },
+        |  "g": 7
+        |}""".stripMargin.replace("\r",""))
+    assert(json.b.d.toString == """[1,2,{"e":"f"},4]""" )
+    assert(json.b.d.toString("") ==
+      """[
+        |  1,
+        |  2,
+        |  {
+        |    "e": "f"
+        |  },
+        |  4
+        |]""".stripMargin.replace("\r",""))
+    }
+
 
   /**
    * Object creation tests.
