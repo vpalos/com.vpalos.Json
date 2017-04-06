@@ -16,7 +16,7 @@ import scala.util.parsing.combinator.{PackratParsers, RegexParsers}
  * or low memory usage, it is meant to be useful in scripting scenarios where navigating the
  * JSON structure can be rather verbose.
  */
-abstract class Json extends Dynamic {
+abstract class Json extends Dynamic with Serializable {
 
   /**
    * Dynamic look-ups.
